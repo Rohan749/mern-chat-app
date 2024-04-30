@@ -4,15 +4,6 @@ import generateToken from "../utils/generateToken.js";
 const saltRounds = 10;
 const myPlaintextPassword = "s0//P4$$w0rD";
 
-const hashingfunction = async (password) => {
-  bcrypt.hash(myPlaintextPassword, saltRounds, function (err, hash) {
-    if (err) console.log("Error while hashing the password", err.message);
-
-    console.log("HAshing:", hash);
-    return hash;
-  });
-};
-
 export const signup = async (req, res, next) => {
   try {
     const { username, name, email, password } = req.body;
@@ -36,8 +27,13 @@ export const signup = async (req, res, next) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const newUser = new User({
-      username, name, email, password: hashedPassword
-    })
+      username,
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    generateToken(newUser._id, res);
 
     newUser
       .save()
@@ -47,8 +43,6 @@ export const signup = async (req, res, next) => {
       .catch((error) => {
         console.log("Error creating the user in mongodb:", error.message);
       });
-
-      generateToken(res._id,res)
   } catch (error) {
     console.log("Error in signup controller", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -65,7 +59,7 @@ export const login = async (req, res, next) => {
       res.status(400).json({ error: "User doesn't exists!" });
     }
 
-   const passwordValid = await bcrypt.compare(password, user.password)
+    const passwordValid = await bcrypt.compare(password, user?.password || "");
 
     if (!passwordValid) {
       res.status(400).json({ error: "Invalid password" });
@@ -81,9 +75,12 @@ export const login = async (req, res, next) => {
 
 export const logout = (req, res, next) => {
   try {
-    console.log("logout controller");
+    res.cookie("jwt", ""), { maxAge: 0 };
+
+    res.status(200).json({ message: "Logged out successfully!" });
+
   } catch (error) {
     console.log(("Error in login controller", error.message));
-    res.status(400).json({ message: "Error while logging out!" });
+    res.status(400).json({ error: "Internal Server error." });
   }
 };
