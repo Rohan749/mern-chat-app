@@ -11,7 +11,7 @@ export const signup = async (req, res, next) => {
     const user = await User.findOne({ username });
 
     if (user) {
-      res
+      return res
         .status(400)
         .json({ error: "User with this username already exists!" });
     }
@@ -19,8 +19,7 @@ export const signup = async (req, res, next) => {
     const emailpresent = await User.findOne({ email });
 
     if (emailpresent) {
-      res.status(400).json({ error: "User with this email already exists!" });
-      return;
+      return res.status(400).json({ error: "User with this email already exists!" });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -38,14 +37,14 @@ export const signup = async (req, res, next) => {
     newUser
       .save()
       .then(() => {
-        res.status(201).json({ message: "New user is created!" });
+        return res.status(201).json(newUser);
       })
       .catch((error) => {
         console.log("Error creating the user in mongodb:", error.message);
       });
   } catch (error) {
     console.log("Error in signup controller", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -56,20 +55,24 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      res.status(400).json({ error: "User doesn't exists!" });
+      return res.status(400).json({ error: "User doesn't exists!" });
     }
 
     const passwordValid = await bcrypt.compare(password, user?.password || "");
 
     if (!passwordValid) {
-      res.status(400).json({ error: "Invalid password" });
-      return;
+      return res.status(400).json({ error: "Invalid password" });
     }
 
-    res.status(200).json({ error: "User Authenticated!" });
+    generateToken(user._id, res);
+
+    return res.status(200).json({ error: "User Authenticated!" });
+
+    
+
   } catch (error) {
-    console.log("Error in login controller", error.message);
-    res.status(500).json({ error: "Error while logging in!" });
+    console.log("Internal server error");
+    return res.status(500).json({ error: "Error while logging in!" });
   }
 };
 
@@ -77,10 +80,10 @@ export const logout = (req, res, next) => {
   try {
     res.cookie("jwt", ""), { maxAge: 0 };
 
-    res.status(200).json({ message: "Logged out successfully!" });
+    return res.status(200).json({ message: "Logged out successfully!" });
 
   } catch (error) {
     console.log(("Error in login controller", error.message));
-    res.status(400).json({ error: "Internal Server error." });
+    return res.status(400).json({ error: "Internal Server error." });
   }
 };
