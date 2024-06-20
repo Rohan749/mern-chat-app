@@ -1,9 +1,9 @@
-import express from 'express'
-import authmiddleware from '../middleware/authmiddleware.js';
-import { getAllUsers } from '../controller/user.controller.js';
+import { Router } from "express";
+import { getAllUsers } from "../controllers/user.controller.js";
+import authUser from "../middleware/authUser.js";
 
-const router = express.Router()
+const router = Router()
 
-router.get("/getUsers",  authmiddleware, getAllUsers);
+router.get("/getAllUsers", authUser, getAllUsers)
 
 export default router

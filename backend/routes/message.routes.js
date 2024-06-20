@@ -1,12 +1,11 @@
-import express from 'express'
-import { getMessages, sendMessages } from '../controller/message.controller.js';
-import authmiddleware  from '../middleware/authmiddleware.js';
+import { Router } from "express";
+import {getMessage, sendMessage} from "../controllers/message.controller.js"
+import authUser from "../middleware/authUser.js"
 
-const router = express.Router();
+const route = Router();
+
+route.post("/sendMessage/:id", authUser, sendMessage)
+route.get("/getMessage/:id", authUser, getMessage)
 
 
-router.post("/send/:id", authmiddleware, sendMessages);
-router.get("/:id", authmiddleware, getMessages)
-
-
-export default router
+export default route
