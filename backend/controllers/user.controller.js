@@ -9,7 +9,7 @@ export const getAllUsers = async (req, res, next) => {
         res.status(201).json(getAllUsers)
         
     } catch (error) {
-        console.log("Internal server error")
         res.status(400).json("Error in getAllUsers controller:", error.message)
+        console.log("Internal server error")
     }
 }

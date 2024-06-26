@@ -9,13 +9,11 @@ configDotenv()
 export const SignupController = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
-    const userExist = await User.findOne({ email })
+    const userExist = await User.findOne({email:email})
 
     if (userExist) {
-      return res.status(400).json({ message: "User already exists!" })
+      return res.status(400).json({ error: "User already exists!" })
     }
-
-    console.log(password)
 
     bcrypt.hash(password, 10, (err, hash) => {
       if (err) {
@@ -32,12 +30,11 @@ export const SignupController = async (req, res, next) => {
       newUser.save();
 
       return res.status(201).json(newUser)
-
     });
 
   } catch (error) {
-    res.status(400).json({ message: "Internal server error" })
     console.log("Error in Signup controller:", error.message)
+    return res.status(409).json({ error: "Internal server error" })
   }
 }
 
@@ -48,14 +45,14 @@ export const LoginController = async(req, res, next) => {
     const user = await User.findOne({email})
 
     if(!user) {
-      return res.status(404).json({message: "account doesn't exists! Please create your account"})
+      return res.status(400).json({error: "Account doesn't exists! Please create your account"})
     }
 
 
     const passwordValid = await bcrypt.compare(password, user.password)
 
     if(!passwordValid) {
-      return res.status(401).json({message: `Invalid password for the user: ${email}`})
+      return res.status(401).json({error: `Invalid password for the user: ${email}`})
     }
 
     generateToken(user._id, res)
@@ -64,9 +61,11 @@ export const LoginController = async(req, res, next) => {
 
   } catch (error) {
     console.log("Error in the login controller:", error.message)
-    res.status(400).json({message: "Internal server error"})
+    return res.status(400).json({error: "Internal server error"})
   }
 }
+
+
 
 export const LogoutController = (req, res, next) => {
   try {
@@ -77,7 +76,42 @@ export const LogoutController = (req, res, next) => {
     res.status(200).json({message: "Logged out successfully"})
   } catch (error) {
     console.log("Error in logout controller:", error.message)
-    res.status(400).json({message: "Internal server error"})
+    return res.status(409).json({error: "Internal server error"})
   }
+}
 
+
+export const ChangeUserDataController =  async (req, res, next) => {
+  try {
+    const {senderId} = req;
+    
+    const {confirmPassword, email, username, newPassword} = req.body
+
+    const user = await User.findOne({_id:senderId})
+
+    const passwordValid = await bcrypt.compare(confirmPassword, user.password)
+
+    if(!passwordValid) {
+      return res.status(401).json({error: `Invalid password for the user.`})
+    }
+
+
+    bcrypt.hash(newPassword, 10, async (err, hash) => {
+      if (err) {
+        throw err;
+      }
+
+      await User.findByIdAndUpdate(senderId, {
+        $set : {
+          username, email, password: hash
+        }
+      })
+    });
+
+    return res.status(201).json({message: "Changes successful!"})
+
+  } catch (error) {
+    console.log("Error in ChangeUserData Controller:", error.message)
+    return res.status(409).json({error: "Internal Server Error"})
+  }
 }
